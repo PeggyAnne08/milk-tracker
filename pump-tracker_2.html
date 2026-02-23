@@ -1,0 +1,1188 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Milk Tracker</title>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,500;0,9..144,600;1,9..144,300&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+
+<style>
+  :root {
+    --cream: #F5F3FA;
+    --warm-white: #FAF8FD;
+    --blush: #DDD6F3;
+    --blush-deep: #9B8EC4;
+    --sage: #A89CC8;
+    --sage-light: #D8D1EE;
+    --brown: #3D2D6B;
+    --brown-light: #6B5A9E;
+    --text: #2A1F4A;
+    --text-soft: #6B5F8A;
+    --border: #D8D1EE;
+    --shadow: rgba(61,45,107,0.08);
+    --success: #7B9EA8;
+    --error: #C47B8A;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--cream);
+    color: var(--text);
+    min-height: 100vh;
+  }
+
+  /* CONFIG BANNER */
+  #config-banner {
+    background: var(--brown);
+    color: #fff;
+    text-align: center;
+    padding: 10px 20px;
+    font-size: 13px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+  #config-banner a { color: var(--blush); text-decoration: underline; cursor: pointer; }
+  #config-modal-overlay {
+    display: none;
+    position: fixed; inset: 0;
+    background: rgba(58,41,32,0.5);
+    z-index: 100;
+    align-items: center;
+    justify-content: center;
+  }
+  #config-modal-overlay.open { display: flex; }
+  #config-modal {
+    background: var(--warm-white);
+    border-radius: 16px;
+    padding: 32px;
+    width: 90%;
+    max-width: 500px;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.2);
+  }
+  #config-modal h2 {
+    font-family: 'Fraunces', serif;
+    font-size: 22px;
+    margin-bottom: 8px;
+    color: var(--brown);
+  }
+  #config-modal p { font-size: 13px; color: var(--text-soft); line-height: 1.6; margin-bottom: 20px; }
+  #config-modal label { display: block; font-size: 13px; font-weight: 500; margin-bottom: 6px; color: var(--text); }
+  #config-modal input {
+    width: 100%;
+    padding: 10px 14px;
+    border: 1.5px solid var(--border);
+    border-radius: 8px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 14px;
+    background: white;
+    color: var(--text);
+    margin-bottom: 14px;
+    outline: none;
+  }
+  #config-modal input:focus { border-color: var(--blush-deep); }
+  .config-steps { background: var(--cream); border-radius: 10px; padding: 16px; margin-bottom: 20px; font-size: 12.5px; line-height: 1.8; color: var(--text-soft); }
+  .config-steps strong { color: var(--brown); }
+  .config-steps ol { padding-left: 18px; }
+
+  /* HEADER */
+  header {
+    background: var(--warm-white);
+    border-bottom: 1px solid var(--border);
+    padding: 16px 24px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .logo {
+    font-family: 'Fraunces', serif;
+    font-size: 24px;
+    font-weight: 500;
+    color: var(--brown);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .logo-icon { font-size: 22px; }
+  .subtitle { font-size: 12px; color: var(--text-soft); font-weight: 300; margin-top: 1px; }
+
+  /* STASH BADGE */
+  .stash-badge {
+    background: var(--blush);
+    border-radius: 12px;
+    padding: 10px 18px;
+    text-align: center;
+  }
+  .stash-badge .stash-oz {
+    font-family: 'Fraunces', serif;
+    font-size: 28px;
+    font-weight: 600;
+    color: var(--brown);
+    line-height: 1;
+  }
+  .stash-badge .stash-label { font-size: 11px; color: var(--brown-light); margin-top: 2px; text-transform: uppercase; letter-spacing: 0.5px; }
+
+  /* TABS */
+  .tabs {
+    display: flex;
+    gap: 0;
+    border-bottom: 1px solid var(--border);
+    background: var(--warm-white);
+    padding: 0 24px;
+  }
+  .tab-btn {
+    background: none;
+    border: none;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--text-soft);
+    padding: 14px 20px 12px;
+    cursor: pointer;
+    border-bottom: 2.5px solid transparent;
+    transition: all 0.2s;
+  }
+  .tab-btn.active {
+    color: var(--brown);
+    border-bottom-color: var(--blush-deep);
+  }
+  .tab-btn:hover { color: var(--brown); }
+
+  /* MAIN */
+  main { max-width: 680px; margin: 0 auto; padding: 24px 16px 60px; }
+
+  .tab-panel { display: none; }
+  .tab-panel.active { display: block; }
+
+  /* CARDS */
+  .card {
+    background: var(--warm-white);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 24px;
+    margin-bottom: 16px;
+    box-shadow: 0 2px 8px var(--shadow);
+  }
+  .card-title {
+    font-family: 'Fraunces', serif;
+    font-size: 18px;
+    color: var(--brown);
+    margin-bottom: 16px;
+    font-weight: 500;
+  }
+
+  /* FORM */
+  .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .form-group { display: flex; flex-direction: column; gap: 6px; }
+  .form-group.full { grid-column: 1 / -1; }
+  label { font-size: 12.5px; font-weight: 500; color: var(--text-soft); text-transform: uppercase; letter-spacing: 0.4px; }
+  input, select {
+    padding: 10px 14px;
+    border: 1.5px solid var(--border);
+    border-radius: 10px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 15px;
+    background: white;
+    color: var(--text);
+    outline: none;
+    transition: border-color 0.15s;
+    -webkit-appearance: none;
+  }
+  input:focus, select:focus { border-color: var(--blush-deep); }
+
+  /* QUICK AMOUNT BUTTONS */
+  .quick-amounts { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 4px; }
+  .quick-btn {
+    background: var(--cream);
+    border: 1.5px solid var(--border);
+    border-radius: 8px;
+    padding: 5px 12px;
+    font-size: 13px;
+    font-family: 'DM Sans', sans-serif;
+    color: var(--text-soft);
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .quick-btn:hover, .quick-btn.selected {
+    background: var(--blush);
+    border-color: var(--blush-deep);
+    color: var(--brown);
+  }
+
+  /* TIME QUICK BUTTONS */
+  .time-quick { display: flex; gap: 6px; margin-top: 4px; }
+  .time-quick-btn {
+    flex: 1;
+    background: var(--cream);
+    border: 1.5px solid var(--border);
+    border-radius: 8px;
+    padding: 6px 8px;
+    font-size: 12px;
+    font-family: 'DM Sans', sans-serif;
+    color: var(--text-soft);
+    cursor: pointer;
+    text-align: center;
+    transition: all 0.15s;
+  }
+  .time-quick-btn:hover, .time-quick-btn.selected {
+    background: var(--blush);
+    border-color: var(--blush-deep);
+    color: var(--brown);
+  }
+
+  /* SUBMIT BUTTON */
+  .btn-primary {
+    background: var(--brown);
+    color: white;
+    border: none;
+    border-radius: 12px;
+    padding: 14px 28px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 15px;
+    font-weight: 500;
+    cursor: pointer;
+    width: 100%;
+    margin-top: 16px;
+    transition: background 0.15s, transform 0.1s;
+  }
+  .btn-primary:hover { background: var(--brown-light); }
+  .btn-primary:active { transform: scale(0.98); }
+  .btn-primary:disabled { background: var(--border); color: var(--text-soft); cursor: not-allowed; }
+
+  .btn-secondary {
+    background: white;
+    color: var(--brown);
+    border: 1.5px solid var(--border);
+    border-radius: 12px;
+    padding: 10px 20px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .btn-secondary:hover { border-color: var(--blush-deep); background: var(--cream); }
+
+  /* TOAST */
+  #toast {
+    position: fixed;
+    bottom: 24px;
+    left: 50%;
+    transform: translateX(-50%) translateY(80px);
+    background: var(--brown);
+    color: white;
+    padding: 12px 24px;
+    border-radius: 100px;
+    font-size: 14px;
+    font-weight: 500;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.2);
+    transition: transform 0.3s ease;
+    z-index: 200;
+    white-space: nowrap;
+  }
+  #toast.show { transform: translateX(-50%) translateY(0); }
+  #toast.error { background: var(--error); }
+  #toast.success { background: var(--success); }
+
+  /* STASH LIST */
+  .stash-grid { display: grid; gap: 10px; }
+  .stash-item {
+    background: white;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 14px 16px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+  }
+  .stash-item.used { opacity: 0.5; }
+  .stash-item.donated { opacity: 0.5; }
+  .stash-oz-badge {
+    background: var(--sage-light);
+    color: var(--brown);
+    border-radius: 8px;
+    padding: 6px 12px;
+    font-family: 'Fraunces', serif;
+    font-size: 18px;
+    font-weight: 500;
+    min-width: 60px;
+    text-align: center;
+    flex-shrink: 0;
+  }
+  .stash-item-info { flex: 1; }
+  .stash-item-date { font-size: 14px; font-weight: 500; color: var(--text); }
+  .stash-item-status { font-size: 12px; color: var(--text-soft); margin-top: 2px; }
+  .stash-item-actions { display: flex; gap: 6px; }
+  .action-btn {
+    background: none;
+    border: 1.5px solid var(--border);
+    border-radius: 8px;
+    padding: 5px 10px;
+    font-size: 12px;
+    font-family: 'DM Sans', sans-serif;
+    color: var(--text-soft);
+    cursor: pointer;
+    transition: all 0.15s;
+    white-space: nowrap;
+  }
+  .action-btn:hover { border-color: var(--blush-deep); color: var(--brown); background: var(--cream); }
+  .used-toggle {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    cursor: pointer;
+    user-select: none;
+  }
+  .toggle-label { font-size: 12px; color: var(--text-soft); font-weight: 500; }
+  .toggle-track {
+    width: 38px; height: 22px;
+    border-radius: 100px;
+    background: var(--border);
+    position: relative;
+    transition: background 0.2s;
+    flex-shrink: 0;
+  }
+  .toggle-thumb {
+    width: 16px; height: 16px;
+    border-radius: 50%;
+    background: white;
+    position: absolute;
+    top: 3px; left: 3px;
+    transition: transform 0.2s, background 0.2s;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+  }
+  .used-toggle.on .toggle-track { background: var(--blush-deep); }
+  .used-toggle.on .toggle-thumb { transform: translateX(16px); }
+  .used-toggle.off .toggle-track { background: var(--border); }
+
+  /* DONATE MODAL */
+  #donate-modal-overlay {
+    display: none;
+    position: fixed; inset: 0;
+    background: rgba(58,41,32,0.5);
+    z-index: 100;
+    align-items: center;
+    justify-content: center;
+  }
+  #donate-modal-overlay.open { display: flex; }
+  #donate-modal {
+    background: var(--warm-white);
+    border-radius: 16px;
+    padding: 28px;
+    width: 90%;
+    max-width: 400px;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.2);
+  }
+  #donate-modal h3 {
+    font-family: 'Fraunces', serif;
+    color: var(--brown);
+    margin-bottom: 14px;
+    font-size: 18px;
+  }
+  #donate-modal input {
+    width: 100%;
+    margin-bottom: 12px;
+  }
+  .modal-actions { display: flex; gap: 10px; margin-top: 6px; }
+  .modal-actions .btn-primary { margin-top: 0; }
+
+  /* CHART */
+  .chart-container { position: relative; height: 220px; }
+  .chart-meta { display: flex; gap: 16px; margin-bottom: 16px; flex-wrap: wrap; }
+  .chart-stat {
+    background: var(--cream);
+    border-radius: 10px;
+    padding: 10px 16px;
+    flex: 1;
+    min-width: 100px;
+  }
+  .chart-stat-val {
+    font-family: 'Fraunces', serif;
+    font-size: 22px;
+    color: var(--brown);
+    font-weight: 500;
+  }
+  .chart-stat-label { font-size: 11px; color: var(--text-soft); margin-top: 2px; text-transform: uppercase; letter-spacing: 0.4px; }
+
+  /* LOADING */
+  .loading-spinner {
+    display: inline-block;
+    width: 16px; height: 16px;
+    border: 2px solid rgba(255,255,255,0.4);
+    border-top-color: white;
+    border-radius: 50%;
+    animation: spin 0.6s linear infinite;
+    vertical-align: middle;
+    margin-right: 6px;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* SECTION HEADER */
+  .section-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 14px;
+  }
+  .empty-state {
+    text-align: center;
+    padding: 32px;
+    color: var(--text-soft);
+    font-size: 14px;
+  }
+  .empty-state .empty-icon { font-size: 32px; margin-bottom: 8px; }
+
+  @media (max-width: 400px) {
+    .form-grid { grid-template-columns: 1fr; }
+    .stash-item-actions { flex-direction: column; }
+    .tabs { padding: 0 8px; }
+    .tab-btn { padding: 14px 12px 12px; font-size: 13px; }
+  }
+</style>
+</head>
+<body>
+
+<!-- CONFIG BANNER -->
+<div id="config-banner">
+  ⚙️ Google Sheets not connected yet — <a onclick="openConfig()">click here to set it up</a> (takes 2 minutes)
+</div>
+
+<!-- CONFIG MODAL -->
+<div id="config-modal-overlay">
+  <div id="config-modal">
+    <h2>Connect Google Sheets</h2>
+    <p>To save your data directly to your spreadsheet, you'll need a Google Apps Script web app URL. Here's how to set it up:</p>
+    <div class="config-steps">
+      <ol>
+        <li>Open your Google Sheet → click <strong>Extensions → Apps Script</strong></li>
+        <li>Delete any existing code and paste in the script from the instructions below</li>
+        <li>Click <strong>Deploy → New deployment → Web app</strong></li>
+        <li>Set "Who has access" to <strong>Anyone</strong> → click Deploy</li>
+        <li>Copy the web app URL and paste it here 👇</li>
+      </ol>
+    </div>
+    <label>Your Google Apps Script Web App URL</label>
+    <input type="url" id="script-url-input" placeholder="https://script.google.com/macros/s/..." />
+    <label>Pump Log Sheet Name (default: Pump output)</label>
+    <input type="text" id="pump-sheet-name" placeholder="Pump output" value="Pump output" />
+    <label>Stash Sheet Name (default: Stash)</label>
+    <input type="text" id="stash-sheet-name" placeholder="Stash" value="Stash" />
+    <div class="modal-actions">
+      <button class="btn-secondary" onclick="closeConfig()">Cancel</button>
+      <button class="btn-primary" style="margin-top:0" onclick="saveConfig()">Save & Connect</button>
+    </div>
+  </div>
+</div>
+
+<!-- DONATE MODAL -->
+<div id="donate-modal-overlay">
+  <div id="donate-modal">
+    <h3>Mark as Donated</h3>
+    <label>Donated to (organization or person)</label>
+    <input type="text" id="donate-location" placeholder="e.g. Milk Bank of the Midwest" />
+    <div class="modal-actions">
+      <button class="btn-secondary" onclick="closeDonateModal()">Cancel</button>
+      <button class="btn-primary" style="margin-top:0" onclick="confirmDonate()">Confirm Donation</button>
+    </div>
+  </div>
+</div>
+
+<!-- HEADER -->
+<header>
+  <div>
+    <div class="logo"><span class="logo-icon">🍼</span> Milk Tracker</div>
+    <div class="subtitle">Pump log & stash manager</div>
+  </div>
+  <div class="stash-badge">
+    <div class="stash-oz" id="stash-total">—</div>
+    <div class="stash-label">oz in stash</div>
+  </div>
+</header>
+
+<!-- TABS -->
+<div class="tabs">
+  <button class="tab-btn active" onclick="switchTab('log')">Log Session</button>
+  <button class="tab-btn" onclick="switchTab('stash')">Stash</button>
+  <button class="tab-btn" onclick="switchTab('trends')">Trends</button>
+</div>
+
+<!-- MAIN -->
+<main>
+
+  <!-- LOG TAB -->
+  <div id="tab-log" class="tab-panel active">
+    <div class="card">
+      <div class="card-title">New Pump Session</div>
+      <div class="form-grid">
+        <div class="form-group">
+          <label>Date</label>
+          <input type="date" id="log-date" />
+        </div>
+        <div class="form-group">
+          <label>Time of Day</label>
+          <input type="time" id="log-time" />
+        </div>
+        <div class="form-group full">
+          <label>Amount Pumped (oz)</label>
+          <div class="quick-amounts" id="quick-amounts">
+            <button class="quick-btn" onclick="setAmount(1)">1</button>
+            <button class="quick-btn" onclick="setAmount(1.5)">1.5</button>
+            <button class="quick-btn" onclick="setAmount(2)">2</button>
+            <button class="quick-btn" onclick="setAmount(2.5)">2.5</button>
+            <button class="quick-btn" onclick="setAmount(3)">3</button>
+            <button class="quick-btn" onclick="setAmount(3.5)">3.5</button>
+            <button class="quick-btn" onclick="setAmount(4)">4</button>
+            <button class="quick-btn" onclick="setAmount(4.5)">4.5</button>
+            <button class="quick-btn" onclick="setAmount(5)">5</button>
+          </div>
+          <input type="number" id="log-amount" placeholder="or type custom amount" step="0.5" min="0" style="margin-top:8px" />
+        </div>
+        <div class="form-group">
+          <label>Pump Used</label>
+          <select id="log-used">
+            <option value="">Select pump</option>
+            <option>S1</option>
+            <option>S2</option>
+            <option>BB</option>
+            <option>Eufy</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Collection Cup</label>
+          <select id="log-cup">
+            <option value="">Select cup</option>
+            <option>OG</option>
+            <option>LM</option>
+            <option>NA</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-group full" style="margin-top:4px;">
+          <label>Comments</label>
+          <input type="text" id="log-comments" placeholder="Optional notes" />
+        </div>
+      <div style="display:flex; align-items:center; gap:10px; margin-top:12px;">
+        <input type="checkbox" id="add-to-stash" style="width:auto; padding:0; accent-color: var(--blush-deep);" />
+        <label for="add-to-stash" style="text-transform:none; letter-spacing:0; font-size:14px; color:var(--text); cursor:pointer;">Also add this session to the stash</label>
+      </div>
+      <button class="btn-primary" id="log-submit-btn" onclick="submitPumpLog()">
+        Save Session
+      </button>
+    </div>
+
+    <!-- RECENT SESSIONS -->
+    <div class="card">
+      <div class="section-header">
+        <div class="card-title" style="margin-bottom:0">Recent Sessions</div>
+        <button class="btn-secondary" style="font-size:12px;padding:6px 12px" onclick="loadRecentSessions()">↻ Refresh</button>
+      </div>
+      <div id="recent-sessions-list">
+        <div class="empty-state"><div class="empty-icon">📋</div>Connect Google Sheets to see your recent sessions</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- STASH TAB -->
+  <div id="tab-stash" class="tab-panel">
+    <div class="card">
+      <div class="card-title">Add to Stash</div>
+      <div class="form-grid">
+        <div class="form-group">
+          <label>Date</label>
+          <input type="date" id="stash-date" />
+        </div>
+        <div class="form-group">
+          <label>Amount (oz)</label>
+          <input type="number" id="stash-amount" placeholder="e.g. 4" step="0.5" min="0" />
+        </div>
+      </div>
+      <button class="btn-primary" id="stash-submit-btn" onclick="submitStash()">Add to Stash</button>
+    </div>
+
+    <div class="card">
+      <div class="section-header">
+        <div class="card-title" style="margin-bottom:0">Freezer Stash</div>
+        <button class="btn-secondary" style="font-size:12px;padding:6px 12px" onclick="loadStash()">↻ Refresh</button>
+      </div>
+      <div style="margin-bottom:12px;position:relative;">
+        <input type="text" id="stash-search" placeholder="Search by date (e.g. 2/19) or amount (e.g. 4.5)" oninput="filterStash()" style="padding-left:36px;width:100%" />
+        <span style="position:absolute;left:12px;top:50%;transform:translateY(-50%);color:var(--text-soft);font-size:15px;pointer-events:none;">🔍</span>
+      </div>
+      <div id="stash-list">
+        <div class="empty-state"><div class="empty-icon">🧊</div>Connect Google Sheets to see your stash</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- TRENDS TAB -->
+  <div id="tab-trends" class="tab-panel">
+    <div class="card">
+      <div class="card-title">Pumping Trends</div>
+      <div class="chart-meta">
+        <div class="chart-stat">
+          <div class="chart-stat-val" id="stat-avg">—</div>
+          <div class="chart-stat-label">avg oz/session</div>
+        </div>
+        <div class="chart-stat">
+          <div class="chart-stat-val" id="stat-daily">—</div>
+          <div class="chart-stat-label">avg oz/day</div>
+        </div>
+        <div class="chart-stat">
+          <div class="chart-stat-val" id="stat-sessions">—</div>
+          <div class="chart-stat-label">sessions logged</div>
+        </div>
+      </div>
+      <div class="chart-container">
+        <canvas id="trend-chart"></canvas>
+      </div>
+      <div style="text-align:center;margin-top:8px;font-size:12px;color:var(--text-soft)">Daily total oz over last 14 days</div>
+    </div>
+  </div>
+
+</main>
+
+<div id="toast">Saved!</div>
+
+<script>
+// =====================
+// STATE
+// =====================
+let config = {
+  scriptUrl: '',
+  pumpSheet: 'Pump output',
+  stashSheet: 'Stash'
+};
+
+// Try to load from sessionStorage (less restricted than localStorage)
+try {
+  config.scriptUrl = sessionStorage.getItem('gs_script_url') || '';
+  config.pumpSheet = sessionStorage.getItem('gs_pump_sheet') || 'Pump output';
+  config.stashSheet = sessionStorage.getItem('gs_stash_sheet') || 'Stash';
+} catch(e) {
+  console.log('Storage unavailable, config will not persist between sessions');
+}
+let pendingDonateRowIdx = null;
+let allSessions = [];
+let allStash = [];
+
+// =====================
+// INIT
+// =====================
+window.onload = function() {
+  const today = new Date();
+  const fmt = today.toISOString().split('T')[0];
+  document.getElementById('log-date').value = fmt;
+  document.getElementById('stash-date').value = fmt;
+  const now = today.toTimeString().slice(0,5);
+  document.getElementById('log-time').value = now;
+
+  if (config.scriptUrl) {
+    document.getElementById('config-banner').style.display = 'none';
+    document.getElementById('script-url-input').value = config.scriptUrl;
+    document.getElementById('pump-sheet-name').value = config.pumpSheet;
+    document.getElementById('stash-sheet-name').value = config.stashSheet;
+    loadRecentSessions();
+    loadStash();
+  }
+};
+
+// =====================
+// CONFIG
+// =====================
+function openConfig() { document.getElementById('config-modal-overlay').classList.add('open'); }
+function closeConfig() { document.getElementById('config-modal-overlay').classList.remove('open'); }
+
+function saveConfig() {
+  const url = document.getElementById('script-url-input').value.trim();
+  const pumpSheet = document.getElementById('pump-sheet-name').value.trim() || 'Sheet1';
+  const stashSheet = document.getElementById('stash-sheet-name').value.trim() || 'Stash';
+  if (!url) { showToast('Please enter your Apps Script URL', 'error'); return; }
+  config.scriptUrl = url;
+  config.pumpSheet = pumpSheet;
+  config.stashSheet = stashSheet;
+  try {
+    sessionStorage.setItem('gs_script_url', url);
+    sessionStorage.setItem('gs_pump_sheet', pumpSheet);
+    sessionStorage.setItem('gs_stash_sheet', stashSheet);
+  } catch(e) { /* storage blocked, config lives in memory for this session */ }
+  document.getElementById('config-banner').style.display = 'none';
+  closeConfig();
+  showToast('Connected to Google Sheets! ✓', 'success');
+  loadRecentSessions();
+  loadStash();
+}
+
+// =====================
+// TABS
+// =====================
+function switchTab(tab) {
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('tab-' + tab).classList.add('active');
+  event.target.classList.add('active');
+  if (tab === 'trends') buildTrendsChart();
+}
+
+// =====================
+// QUICK INPUTS
+// =====================
+function setAmount(val) {
+  document.getElementById('log-amount').value = val;
+  document.querySelectorAll('.quick-btn').forEach(b => b.classList.remove('selected'));
+  event.target.classList.add('selected');
+}
+
+const timeMap = { morning: '08:00', midday: '11:30', afternoon: '14:30' };
+function setTime(label) {
+  document.getElementById('log-time').value = timeMap[label];
+  document.querySelectorAll('.time-quick-btn').forEach(b => b.classList.remove('selected'));
+  event.target.classList.add('selected');
+}
+
+// =====================
+// GOOGLE SHEETS API
+// =====================
+async function callScript(action, data) {
+  if (!config.scriptUrl) {
+    showToast('Please connect Google Sheets first', 'error');
+    return null;
+  }
+  const url = config.scriptUrl + '?action=' + action + '&data=' + encodeURIComponent(JSON.stringify(data));
+  try {
+    // Read operations need the response, write operations can use no-cors
+    const isRead = action === 'getRows';
+    if (isRead) {
+      const res = await fetch(url, { redirect: 'follow' });
+      const json = await res.json();
+      return json;
+    } else {
+      // Use no-cors for writes to avoid CORS error when opening as local file
+      await fetch(url, { mode: 'no-cors', redirect: 'follow' });
+      return { success: true };
+    }
+  } catch (e) {
+    console.error(e);
+    showToast('Connection error — check your Apps Script URL', 'error');
+    return null;
+  }
+}
+
+// =====================
+// PUMP LOG
+// =====================
+async function submitPumpLog() {
+  const date = document.getElementById('log-date').value;
+  const time = document.getElementById('log-time').value;
+  const amount = document.getElementById('log-amount').value;
+  const cup = document.getElementById('log-cup').value;
+  const used = document.getElementById('log-used').value;
+  const comments = document.getElementById('log-comments').value;
+  const addStash = document.getElementById('add-to-stash').checked;
+
+  if (!date || !time || !amount) {
+    showToast('Please fill in date, time, and amount', 'error');
+    return;
+  }
+
+  const btn = document.getElementById('log-submit-btn');
+  btn.innerHTML = '<span class="loading-spinner"></span>Saving...';
+  btn.disabled = true;
+
+  // Writes A, B, C, H, I, J — columns D-G are formulas in the sheet
+  const result = await callScript('appendPump', {
+    sheet: config.pumpSheet,
+    row: { date, time, amount: parseFloat(amount), pump: used, cups: cup, comments }
+  });
+
+  if (result && result.success) {
+    if (addStash) {
+      await callScript('appendStash', {
+        sheet: config.stashSheet,
+        row: { date, amount: parseFloat(amount), used: 'N', donated: '', donatedTo: '' }
+      });
+      updateStashBadge(parseFloat(amount));
+    }
+    showToast('Session saved! 🎉', 'success');
+    document.getElementById('log-amount').value = '';
+    document.getElementById('log-cup').value = '';
+    document.getElementById('log-used').value = '';
+    document.getElementById('log-comments').value = '';
+    document.getElementById('add-to-stash').checked = false;
+    document.querySelectorAll('.quick-btn').forEach(b => b.classList.remove('selected'));
+    loadRecentSessions();
+  }
+
+  btn.innerHTML = 'Save Session';
+  btn.disabled = false;
+}
+
+async function loadRecentSessions() {
+  if (!config.scriptUrl) return;
+  const result = await callScript('getRows', { sheet: config.pumpSheet, count: 10 });
+  const el = document.getElementById('recent-sessions-list');
+  if (!result || !result.rows || result.rows.length === 0) {
+    el.innerHTML = '<div class="empty-state"><div class="empty-icon">📋</div>No sessions yet</div>';
+    return;
+  }
+  allSessions = result.rows;
+  el.innerHTML = result.rows.slice(-10).reverse().map(r => `
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--border)">
+      <div>
+        <div style="font-size:14px;font-weight:500">${fmtDate(r[0])} <span style="color:var(--text-soft);font-weight:400">at ${fmtTime(r[1])}</span></div>
+        <div style="font-size:12px;color:var(--text-soft);margin-top:2px">${r[7] || ''} · ${r[8] || ''}</div>
+      </div>
+      <div style="font-family:'Fraunces',serif;font-size:20px;color:var(--brown);font-weight:500">${r[2]} oz</div>
+    </div>
+  `).join('');
+}
+
+// =====================
+// STASH
+// =====================
+async function submitStash() {
+  const date = document.getElementById('stash-date').value;
+  const amount = document.getElementById('stash-amount').value;
+  if (!date || !amount) { showToast('Please enter date and amount', 'error'); return; }
+
+  const btn = document.getElementById('stash-submit-btn');
+  btn.innerHTML = '<span class="loading-spinner"></span>Saving...';
+  btn.disabled = true;
+
+  // Writes A, B, C, G, H — columns D-F are formulas in the sheet
+  const result = await callScript('appendStash', {
+    sheet: config.stashSheet,
+    row: { date, amount: parseFloat(amount), used: 'N', donated: '', donatedTo: '' }
+  });
+  if (result && result.success) {
+    showToast('Added to stash! 🧊', 'success');
+    document.getElementById('stash-amount').value = '';
+    loadStash();
+  }
+  btn.innerHTML = 'Add to Stash';
+  btn.disabled = false;
+}
+
+async function loadStash() {
+  if (!config.scriptUrl) return;
+  const result = await callScript('getRows', { sheet: config.stashSheet, count: 999 });
+  const el = document.getElementById('stash-list');
+  if (!result || !result.rows || result.rows.length === 0) {
+    el.innerHTML = '<div class="empty-state"><div class="empty-icon">🧊</div>Your stash is empty</div>';
+    updateStashBadge(0, true);
+    return;
+  }
+  allStash = result.rows;
+  // Filter out empty rows (where date and amount are both blank)
+  var validRows = result.rows.filter(function(r) {
+    return r[0] !== '' && r[1] !== '' && r[1] !== null && r[1] !== undefined;
+  });
+  if (validRows.length === 0) {
+    el.innerHTML = '<div class="empty-state"><div class="empty-icon">🧊</div>Your stash is empty</div>';
+    updateStashBadge(0, true);
+    return;
+  }
+  let total = 0;
+  const items = validRows.map(function(r, i) {
+    var usedVal = (r[2] || '').toString().toLowerCase();
+    var donatedVal = (r[6] || '').toString().toLowerCase();
+    var used = usedVal === 'yes' || usedVal === 'y';
+    var donated = donatedVal === 'yes' || donatedVal === 'y';
+    if (!used && !donated) total += parseFloat(r[1]) || 0;
+    return { date: fmtDate(r[0]), amount: r[1], used: used, donated: donated, donatedTo: r[7], idx: i };
+  });
+  updateStashBadge(total, true);
+  allStash = items;
+  renderStashItems(items);
+}
+
+function renderStashItems(items) {
+  var el = document.getElementById('stash-list');
+  if (items.length === 0) {
+    el.innerHTML = '<div class="empty-state"><div class="empty-icon">🧊</div>No matching stash entries</div>';
+    return;
+  }
+  var rows = '';
+  var reversed = items.slice().reverse();
+  for (var i = 0; i < reversed.length; i++) {
+    var item = reversed[i];
+    var statusClass = item.used ? 'used' : item.donated ? 'donated' : '';
+    var statusText = item.used ? '✓ Used' : item.donated ? ('💛 Donated to ' + (item.donatedTo || 'donor bank')) : '🧊 In freezer';
+    var actions = '';
+    if (!item.donated) {
+      var toggleClass = item.used ? 'on' : 'off';
+      var donateBtn = item.used ? '' : '<button class="action-btn donate-btn" onclick="openDonateModal(' + item.idx + ')">Donate</button>';
+      actions = '<div class="stash-item-actions">'
+        + '<div class="used-toggle ' + toggleClass + '" onclick="toggleStashUsed(' + item.idx + ',' + item.used + ')">'
+        + '<span class="toggle-label">Used</span>'
+        + '<div class="toggle-track"><div class="toggle-thumb"></div></div>'
+        + '</div>'
+        + donateBtn
+        + '</div>';
+    }
+    rows += '<div class="stash-item ' + statusClass + '">'
+      + '<div class="stash-oz-badge">' + item.amount + ' oz</div>'
+      + '<div class="stash-item-info">'
+      + '<div class="stash-item-date">' + item.date + '</div>'
+      + '<div class="stash-item-status">' + statusText + '</div>'
+      + '</div>'
+      + actions
+      + '</div>';
+  }
+  el.innerHTML = '<div class="stash-grid">' + rows + '</div>';
+}
+
+function filterStash() {
+  var query = (document.getElementById('stash-search').value || '').toLowerCase().trim();
+  if (!query) { renderStashItems(allStash.filter(function(item) { return item && item.date; })); return; }
+  var filtered = allStash.filter(function(item) {
+    if (!item || !item.date) return false;
+    return item.date.toLowerCase().includes(query) || String(item.amount).includes(query);
+  });
+  renderStashItems(filtered);
+}
+
+async function toggleStashUsed(rowIdx, currentlyUsed) {
+  const newVal = currentlyUsed ? 'N' : 'Y';
+  const result = await callScript('updateStashRow', {
+    sheet: config.stashSheet,
+    rowIdx: rowIdx,
+    used: newVal
+  });
+  if (result && result.success) {
+    showToast(newVal === 'Y' ? 'Marked as used' : 'Marked as available', 'success');
+    loadStash();
+  }
+}
+
+function openDonateModal(rowIdx) {
+  pendingDonateRowIdx = rowIdx;
+  document.getElementById('donate-location').value = '';
+  document.getElementById('donate-modal-overlay').classList.add('open');
+}
+function closeDonateModal() {
+  document.getElementById('donate-modal-overlay').classList.remove('open');
+  pendingDonateRowIdx = null;
+}
+async function confirmDonate() {
+  const location = document.getElementById('donate-location').value.trim() || 'donor bank';
+  const result = await callScript('updateStashRow', {
+    sheet: config.stashSheet,
+    rowIdx: pendingDonateRowIdx,
+    donated: 'Yes',
+    donatedTo: location
+  });
+  if (result && result.success) {
+    showToast(`Marked as donated to ${location}`, 'success');
+    closeDonateModal();
+    loadStash();
+  }
+}
+
+let _stashDelta = 0;
+function updateStashBadge(amount, reset = false) {
+  if (reset) { _stashDelta = amount; }
+  else { _stashDelta += amount; }
+  const el = document.getElementById('stash-total');
+  el.textContent = Math.round(_stashDelta * 10) / 10;
+}
+
+// =====================
+// TRENDS
+// =====================
+async function buildTrendsChart() {
+  if (!config.scriptUrl) return;
+  const result = await callScript('getRows', { sheet: config.pumpSheet, count: 999 });
+  if (!result || !result.rows) return;
+
+  // Aggregate by date
+  const dailyMap = {};
+  result.rows.forEach(function(r) {
+    var d = fmtDate(r[0]);
+    var amt = parseFloat(r[2]) || 0;
+    dailyMap[d] = (dailyMap[d] || 0) + amt;
+  });
+
+  var allDates = Object.keys(dailyMap).sort();
+  var last14 = allDates.slice(-14);
+  var vals = last14.map(function(d) { return dailyMap[d]; });
+
+  // Stats
+  var allAmts = result.rows.map(function(r) { return parseFloat(r[2]) || 0; });
+  var avg = allAmts.length ? (allAmts.reduce(function(a,b){return a+b;},0)/allAmts.length).toFixed(1) : '—';
+  var dailyAvg = allDates.length ? (Object.values(dailyMap).reduce(function(a,b){return a+b;},0)/allDates.length).toFixed(1) : '—';
+  document.getElementById('stat-avg').textContent = avg;
+  document.getElementById('stat-daily').textContent = dailyAvg;
+  document.getElementById('stat-sessions').textContent = result.rows.length;
+
+  // Draw chart on canvas
+  var canvas = document.getElementById('trend-chart');
+  var ctx = canvas.getContext('2d');
+  var W = canvas.offsetWidth;
+  var H = canvas.offsetHeight;
+  canvas.width = W;
+  canvas.height = H;
+  ctx.clearRect(0, 0, W, H);
+
+  if (vals.length === 0) return;
+
+  var maxVal = Math.max.apply(null, vals) || 1;
+  var padLeft = 36, padRight = 10, padTop = 10, padBottom = 36;
+  var chartW = W - padLeft - padRight;
+  var chartH = H - padTop - padBottom;
+  var barCount = vals.length;
+  var barGap = 6;
+  var barW = Math.max(4, (chartW / barCount) - barGap);
+
+  // Grid lines
+  ctx.strokeStyle = '#D8D1EE';
+  ctx.lineWidth = 1;
+  var gridLines = 4;
+  for (var g = 0; g <= gridLines; g++) {
+    var y = padTop + chartH - (g / gridLines) * chartH;
+    ctx.beginPath();
+    ctx.moveTo(padLeft, y);
+    ctx.lineTo(W - padRight, y);
+    ctx.stroke();
+    // Y axis labels
+    ctx.fillStyle = '#6B5F8A';
+    ctx.font = '10px DM Sans, sans-serif';
+    ctx.textAlign = 'right';
+    ctx.fillText((maxVal * g / gridLines).toFixed(1), padLeft - 4, y + 3);
+  }
+
+  // Bars
+  for (var i = 0; i < vals.length; i++) {
+    var barH = (vals[i] / maxVal) * chartH;
+    var x = padLeft + i * (chartW / barCount) + (chartW / barCount - barW) / 2;
+    var y = padTop + chartH - barH;
+
+    // Bar fill
+    ctx.fillStyle = '#DDD6F3';
+    ctx.strokeStyle = '#9B8EC4';
+    ctx.lineWidth = 1.5;
+    var radius = 4;
+    ctx.beginPath();
+    ctx.moveTo(x + radius, y);
+    ctx.lineTo(x + barW - radius, y);
+    ctx.quadraticCurveTo(x + barW, y, x + barW, y + radius);
+    ctx.lineTo(x + barW, y + barH);
+    ctx.lineTo(x, y + barH);
+    ctx.lineTo(x, y + radius);
+    ctx.quadraticCurveTo(x, y, x + radius, y);
+    ctx.closePath();
+    ctx.fill();
+    ctx.stroke();
+
+    // X axis labels
+    ctx.fillStyle = '#6B5F8A';
+    ctx.font = '10px DM Sans, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText(last14[i], x + barW / 2, H - 6);
+  }
+}
+
+// =====================
+// FORMATTERS
+// =====================
+function fmtDate(val) {
+  if (!val) return '';
+  const d = new Date(val);
+  if (isNaN(d)) return val; // already a plain string, return as-is
+  return `${d.getMonth()+1}/${d.getDate()}/${String(d.getFullYear()).slice(-2)}`;
+}
+
+function fmtTime(val) {
+  if (!val) return '';
+  const d = new Date(val);
+  if (isNaN(d)) return val;
+  // Use local time values — Sheets timestamps get converted correctly this way
+  let h = d.getHours(), m = d.getMinutes();
+  const ampm = h >= 12 ? 'PM' : 'AM';
+  h = h % 12 || 12;
+  return h + ':' + String(m).padStart(2, '0') + ' ' + ampm;
+}
+
+// =====================
+// TOAST
+// =====================
+let toastTimer;
+function showToast(msg, type = '') {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = type ? `show ${type}` : 'show';
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => { t.className = type || ''; }, 2800);
+}
+</script>
+
+<!-- GOOGLE APPS SCRIPT SETUP GUIDE (hidden comment for user)
+=====================================================================
+APPS SCRIPT CODE — paste this into Extensions > Apps Script in your Google Sheet:
+
+function doGet(e) {
+  const action = e.parameter.action;
+  const data = JSON.parse(e.parameter.data || '{}');
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  let result;
+
+  if (action === 'appendPump') {
+    // Pump Output sheet: A=Date, B=Time, C=Amount, D-G=formulas (skip), H=Pump, I=Cups, J=Comments
+    const sheet = ss.getSheetByName(data.sheet) || ss.getSheets()[0];
+    const lastRow = sheet.getLastRow() + 1;
+    const r = data.row;
+    sheet.getRange(lastRow, 1).setValue(r.date);       // A: Date
+    sheet.getRange(lastRow, 2).setValue(r.time);       // B: Time
+    sheet.getRange(lastRow, 3).setValue(r.amount);     // C: Amount
+    // D-G: formulas — leave untouched
+    sheet.getRange(lastRow, 8).setValue(r.pump);       // H: Pump
+    sheet.getRange(lastRow, 9).setValue(r.cups);       // I: Cups
+    sheet.getRange(lastRow, 10).setValue(r.comments);  // J: Comments
+    result = { success: true };
+
+  } else if (action === 'appendStash') {
+    // Stash sheet: A=Date, B=Amount, C=Used, D-F=formulas (skip), G=Donated, H=Donated To
+    const sheet = ss.getSheetByName(data.sheet) || ss.insertSheet(data.sheet);
+    const lastRow = sheet.getLastRow() + 1;
+    const r = data.row;
+    sheet.getRange(lastRow, 1).setValue(r.date);       // A: Date
+    sheet.getRange(lastRow, 2).setValue(r.amount);     // B: Amount
+    sheet.getRange(lastRow, 3).setValue(r.used);       // C: Used
+    // D-F: formulas — leave untouched
+    sheet.getRange(lastRow, 7).setValue(r.donated);    // G: Donated
+    sheet.getRange(lastRow, 8).setValue(r.donatedTo);  // H: Donated To
+    result = { success: true };
+
+  } else if (action === 'getRows') {
+    const sheet = ss.getSheetByName(data.sheet);
+    if (!sheet) { result = { rows: [] }; }
+    else {
+      const lastRow = sheet.getLastRow();
+      if (lastRow <= 1) { result = { rows: [] }; }
+      else {
+        const rows = sheet.getRange(1, 1, lastRow, sheet.getLastColumn()).getValues();
+        result = { rows: rows.slice(1) }; // skip header row
+      }
+    }
+
+  } else if (action === 'updateStashRow') {
+    // Stash: C=Used (col 3), G=Donated (col 7), H=Donated To (col 8)
+    const sheet = ss.getSheetByName(data.sheet);
+    const rowNum = data.rowIdx + 2; // +2 for header + 1-indexed
+    if (data.used)     sheet.getRange(rowNum, 3).setValue(data.used);      // C: Used
+    if (data.donated)  sheet.getRange(rowNum, 7).setValue(data.donated);   // G: Donated
+    if (data.donatedTo) sheet.getRange(rowNum, 8).setValue(data.donatedTo); // H: Donated To
+    result = { success: true };
+  }
+
+  return ContentService.createTextOutput(JSON.stringify(result))
+    .setMimeType(ContentService.MimeType.JSON);
+}
+=====================================================================
+-->
+</body>
+</html>
